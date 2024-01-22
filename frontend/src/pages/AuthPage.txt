@@ -1,0 +1,344 @@
+import React, { useState } from "react";
+import * as Components from '../StartUp/Components.jsx';
+import {
+    Box, Button,
+    Flex, Select,
+    Modal, ModalBody,
+    ModalContent, ModalOverlay,
+    FormControl, FormLabel,
+    ModalCloseButton, useDisclosure,
+    ModalHeader, Input,
+	Text,
+	useColorModeValue
+} from "@chakra-ui/react";
+import Cookies from "js-cookies";
+import useShowToast from "../hooks/useShowToast.js";
+import { useSetRecoilState } from "recoil";
+import userAtom from "../atoms/userAtom.js";
+
+
+const AuthPage = () => {
+    const [signin, toggle] = useState(true);
+    const setUser = useSetRecoilState(userAtom);
+    const [register, setRegister] = useState({
+        nric: "",
+        username: "",
+        email: "",
+        password: "",
+    });
+    const [login, setLogin] = useState({
+        email: "",
+        password: "",
+        access: ""
+    });
+    const showToast = useShowToast();
+    const [loading, setLoading] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [openModal, setOpenModal] = useState(false);
+    const { isOpen, onOpen, onClose } = useDisclosure();
+	const [changingPassword, setChangingPassword] = useState({
+		email: "",
+		newPassword: "",
+	});
+
+
+	const changePassword = async () => {
+		setLoading(true);
+
+		if(!changingPassword) {
+			showToast("Incomplete Information", "Please fill required fields", "error");
+			return;
+		} else if(changingPassword.newPassword !== confirmPassword) {
+			showToast("Incorrect Password", "Password Do Not Match", "error");
+		}
+
+		try {
+			const res = await fetch(`/api/users/changePassword`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(changingPassword),
+			});
+
+			if(res.ok) {
+				showToast("User password has been changed", "Password changed successfully", "success");
+			} else {
+				showToast("Failed to changed password", "Error while changing password", "error");
+			}
+		}catch(error) {
+			showToast("Error", data.error, "error");
+		}finally {
+			setLoading(false);
+		}
+	}
+
+
+    const handleSignup = async () => {
+		if(register.password !== confirmPassword) {
+			showToast("Error", "Password Not Match", "error");
+			return;
+		}
+
+		try {
+			const res = await fetch(`/api/users/signup`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(register),
+			});
+			const data = await res.json();
+
+			if (data.error) {
+				showToast("Error", data.error, "error");
+				return;
+			}
+			Cookies.setItem("Campus-Connect", JSON.stringify(data));
+			setUser(data);
+		} catch (error) {
+			showToast("Error", error, "error");
+		}
+	};
+
+
+    const handleLogin = async () => {
+		setLoading(true);
+
+		console.log("Login: ", login);
+		try {
+			const res = await fetch(`/api/users/login`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(login),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				if (data.error) {
+					showToast("Error", data.error, "error");
+				} else {
+					Cookies.setItem("CampusConnect", JSON.stringify(data));
+					setUser(data);
+				}
+			} else {
+				const errorData = await res.json();
+				showToast("Error", errorData.error, "error");
+			}
+		} catch (error) {
+			showToast("Error", error.message, "error");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+
+    return(
+		<Flex justifyContent="center" alignItems="center" mt={24}>
+			<Components.Container>
+			  	{/* Sign Up Container */}
+			  	<Components.SignUpContainer signinin={signin}>
+					<Components.Form>
+					  	<Box w="90%">
+							<Box as={Components.Title}>
+							  	<Text color="black">Create Account</Text>
+							</Box>
+							<Flex columnGap={4}>
+							  	<Input
+									type="text"
+									as={Components.CustomInput}
+									placeholder="NRIC"
+									value={register.nric}
+									onChange={(e) => setRegister((register) => ({ ...register, nric: e.target.value }))}
+							  	/>
+							  	<Input
+									type="text"
+									as={Components.CustomInput}
+									placeholder="Username"
+									value={register.username}
+									onChange={(e) => setRegister((register) => ({ ...register, username: e.target.value }))}
+							  	/>
+							</Flex>
+							<Input
+							  	type="text"
+							  	placeholder="Email"
+								as={Components.CustomInput}
+							  	value={register.email}
+							  	onChange={(e) => setRegister((register) => ({ ...register, email: e.target.value }))}
+							/>
+							<Flex columnGap={4}>
+							  	<Input
+									type="password"
+									placeholder="Password"
+									as={Components.CustomInput}
+									value={register.password}
+									onChange={(e) => setRegister((register) => ({ ...register, password: e.target.value }))}
+							  	/>
+							  	<Input
+									type="email"
+									placeholder="Confirm Password"
+									as={Components.CustomInput}
+									value={confirmPassword}
+									onChange={(e) => setConfirmPassword(e.target.value)}
+							  	/>
+							</Flex>
+							<Button
+							  	rounded="2xl"
+							  	border="none"
+							  	bg="orange.500"
+							  	px={8}
+							  	py={2}
+							  	fontWeight="bold"
+							  	mt={4}
+							  	onClick={handleSignup}
+							  	isLoading={loading}
+							>
+							  	Sign Up
+							</Button>
+					  	</Box>
+					</Components.Form>
+			  	</Components.SignUpContainer>
+
+			  	{/* Log In Container */}
+			  	<Box as={Components.SignInContainer} signinin={signin}>
+					<Box as={Components.Form}>
+					  	<Flex flexDirection="column" w="90%">
+							<Box as={Components.Title}>
+							  <Text color="black">Login</Text>
+							</Box>
+							<Input
+								as={Components.CustomInput}
+							  	type="email"
+							  	placeholder="Email"
+							  	value={login.email}
+							  	onChange={(e) => setLogin((login) => ({ ...login, email: e.target.value }))}
+							/>
+							<Input
+							  	type="password"
+							  	placeholder="Password"
+								as={Components.CustomInput}
+							  	value={login.password}
+							  	onChange={(e) => setLogin((login) => ({ ...login, password: e.target.value }))}
+							/>
+							<Select
+							  	mt={2}
+							  	fontSize="sm"
+							  	color="black"
+							  	isRequired
+								as={Components.CustomInput}
+							  	value={login.access}
+							  	onChange={(e) => setLogin((login) => ({ ...login, access: e.target.value }))}
+							  	placeholder="Please Select Your Access"
+							  	bg="gray.200"
+							>
+							  <option value="Student">Student</option>
+							  <option value="Lecturer">Lecturer</option>
+							  <option value="Admin">Admin</option>
+							</Select>
+							<Text as={Components.Anchor} onClick={() => setOpenModal(true)}>
+							  Forgot your password?
+							</Text>
+							<Button
+								as={Components.CustomButton}
+							  	rounded="2xl"
+							  	border="none"
+							  	bg="orange.500"
+							  	px={8}
+							  	py={2}
+							  	fontWeight="bold"
+							  	onClick={handleLogin}
+							  	isLoading={loading}
+							>
+							  	Login
+							</Button>
+					  	</Flex>
+					</Box>
+			  	</Box>
+
+			  	{/* Overlay Container */}
+			  	<Box as={Components.OverlayContainer} signinin={signin}>
+					<Box as={Components.Overlay} signinin={signin}>
+					  	{/* Left Overlay Panel */}
+					  	<Box as={Components.LeftOverlayPanel} signinin={signin}>
+							<Box as={Components.Title}>Welcome To Campus Connect</Box>
+							<Text as={Components.Paragraph}>Enter your personal information to start your journey with us</Text>
+							<Text as={Components.Paragraph}>Already have an account with us? Login now</Text>
+							<Button bg={"whiteAlpha.500"} as={Components.GhostButton} onClick={() => toggle(true)}>
+							  	Login
+							</Button>
+					  	</Box>
+
+					  	{/* Right Overlay Panel */}
+					  	<Box as={Components.RightOverlayPanel} signinin={signin}>
+							<Box as={Components.Title}>Welcome Back!</Box>
+							<Text as={Components.Paragraph}>Login and start your journey with us</Text>
+							<Text as={Components.Paragraph}>Don't have an account with us? Sign up now.</Text>
+							<Button bg={"whiteAlpha.500"} as={Components.GhostButton} onClick={() => toggle(false)}>
+							  	Sign Up
+							</Button>
+					  	</Box>
+					</Box>
+			  	</Box>
+
+			  	{/* Modal */}
+			  	{openModal && (
+					<Modal isOpen={onOpen} onClose={() => setOpenModal(false)} size="md">
+					  <ModalOverlay />
+					  <ModalContent borderRadius="md">
+						<ModalHeader>Change Password</ModalHeader>
+						<ModalCloseButton />
+						<ModalBody>
+						  <FormControl mb={4}>
+							<FormLabel>Email:</FormLabel>
+							<Input
+								type="email"
+								placeholder="Enter your email"
+								value={changingPassword.email}
+								onChange={(e) =>
+								setChangingPassword((changingPassword) => ({ ...changingPassword, email: e.target.value }))
+								}
+							/>
+						  </FormControl>
+						  <FormControl mb={4}>
+							<FormLabel>New Password:</FormLabel>
+							<Input
+							  type="password"
+							  placeholder="Enter your new password"
+							  autoComplete="off"
+							  value={changingPassword.newPassword}
+							  onChange={(e) =>
+								setChangingPassword((changingPassword) => ({ ...changingPassword, newPassword: e.target.value }))
+							  }
+							/>
+						  </FormControl>
+						  <FormControl mb={4}>
+							<FormLabel>Confirm Password:</FormLabel>
+							<Input
+							  type="password"
+							  placeholder="Confirm your new password"
+							  autoComplete="off"
+							  value={confirmPassword}
+							  onChange={(e) => setConfirmPassword(e.target.value)}
+							/>
+						  </FormControl>
+						  <Button
+							colorScheme="orange"
+							isLoading={loading}
+							onClick={changePassword}
+							width="full"
+							mt={4}
+						  >
+							Change Password
+						  </Button>
+						</ModalBody>
+					  </ModalContent>
+					</Modal>
+			  	)}
+			</Components.Container>
+	  	</Flex>
+    );
+}
+
+export default AuthPage;
