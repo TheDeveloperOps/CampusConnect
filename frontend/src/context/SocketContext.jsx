@@ -22,7 +22,7 @@ export const SocketContextProvider = ({ children }) => {
 	const [selectedConversation] = useRecoilState(selectedConversationAtom);
 
 	useEffect(() => {
-		const newSocket = io("http://localhost:5000", {
+		const newSocket = io("https://master--storied-croquembouche-22ca55.netlify.app", {
 			query: {
 				userId: user?._id,
 			},
