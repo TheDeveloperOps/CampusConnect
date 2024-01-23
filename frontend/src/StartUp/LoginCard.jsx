@@ -110,7 +110,7 @@ export default function LoginCard() {
 		<Flex justifyContent={"center"} bg={"blackAlpha.300"} px={12} rounded={"2xl"} py={8}>
 		  	<Stack spacing='4'>
 				<VStack justifyContent={"center"} spacing='5'>
-					<Image mt={"-12"} src={Logo} rounded={"full"} w={16} h={"auto"} />
+					<Image mt={"-12"} src={Logo} rounded={"full"} w={100} h={"auto"} />
 				  	<Heading
 						fontWeight={"bold"}
 						fontSize='1.5em'

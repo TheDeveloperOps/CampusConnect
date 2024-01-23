@@ -1,1 +1,1 @@
-export const host = "";
+export const host = "https://65afd947e2a886257350ac30--sensational-nasturtium-3472be.netlify.app/";
